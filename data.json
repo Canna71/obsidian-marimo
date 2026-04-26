@@ -1,0 +1,8 @@
+{
+  "watchedFolders": [
+    "marimo"
+  ],
+  "marimoPort": 2718,
+  "marimoPath": "marimo",
+  "extraArgs": ""
+}
