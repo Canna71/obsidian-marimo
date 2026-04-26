@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-marimo",
+	"name": "obsidian-notebooks",
 	"version": "0.1.0",
-	"description": "Open Python files as interactive marimo notebooks inside Obsidian.",
+	"description": "Open marimo (.py) and Jupyter (.ipynb) notebooks as interactive embedded views inside Obsidian.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

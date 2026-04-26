@@ -66,7 +66,7 @@ export default class MarimoPlugin extends Plugin {
 						return;
 					menu.addItem((item) =>
 						item
-							.setTitle("Open as marimo notebook")
+							.setTitle("Open as notebook")
 							.setIcon("code-2")
 							.onClick(() => this.openMarimoView(file))
 					);
@@ -76,8 +76,8 @@ export default class MarimoPlugin extends Plugin {
 
 		// Command palette entry — only active when a .py file is open.
 		this.addCommand({
-			id: "open-as-marimo-notebook",
-			name: "Open as marimo notebook",
+			id: "open-as-notebook",
+			name: "Open as notebook",
 			checkCallback: (checking: boolean) => {
 				const file = this.app.workspace.getActiveFile();
 				if (file?.extension !== "py") return false;

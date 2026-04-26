@@ -1,8 +1,6 @@
-# Obsidian Marimo
+# Notebooks
 
-Open **marimo notebooks** (`.py`) and **Jupyter notebooks** (`.ipynb`) as fully interactive embedded views directly inside [Obsidian](https://obsidian.md).
-
-The plugin launches the appropriate notebook server in the background and renders it in an Obsidian pane — no browser tab switching required.
+An [Obsidian](https://obsidian.md) plugin that opens [marimo](https://marimo.io) (`.py`) and [Jupyter](https://jupyter.org) (`.ipynb`) notebooks as interactive embedded views directly inside Obsidian panes.
 
 > **Desktop only.** This plugin spawns native processes and is not available on mobile.
 
@@ -10,12 +8,14 @@ The plugin launches the appropriate notebook server in the background and render
 
 ## Features
 
-- Open `.py` marimo notebooks via `marimo edit` embedded in Obsidian
-- Open `.ipynb` Jupyter notebooks via `jupyter notebook` or `jupyter lab` embedded in Obsidian
-- Configurable **watched folders** — files in those folders open automatically as notebooks; files outside show a prompt
-- Multiple notebooks can be open simultaneously, each on its own port
-- Servers are started on demand and shut down automatically when the tab is closed
-- Right-click context menu and command palette entries for any `.py` or `.ipynb` file
+- **Marimo notebooks** (`.py`): launches `marimo edit` in headless mode and embeds the live UI in an Obsidian pane.
+- **Jupyter notebooks** (`.ipynb`): launches `jupyter notebook` or `jupyter lab` and embeds the interface in an Obsidian pane.
+- **Automatic interception**: clicking a `.py` or `.ipynb` file in the file explorer opens it as an embedded notebook instead of a plain text editor.
+- **Context menu**: right-click any `.py` or `.ipynb` file and choose **Open as notebook**.
+- **Command palette**: run the command **Notebooks: Open as notebook** on the active file.
+- **Watched folders**: optionally restrict auto-open behaviour to specific folders; files outside those folders open normally.
+- **Per-file server management**: each notebook gets its own server process on a unique port. Processes are stopped when the pane is closed.
+- **Configurable paths and arguments**: set full executable paths and pass extra CLI arguments for both marimo and Jupyter.
 
 ---
 
@@ -23,9 +23,10 @@ The plugin launches the appropriate notebook server in the background and render
 
 | Requirement | Notes |
 |---|---|
-| Obsidian 1.0+ | Desktop only |
-| [marimo](https://marimo.io) | For `.py` notebooks |
-| [Jupyter](https://jupyter.org) | For `.ipynb` notebooks |
+| Obsidian ≥ 1.0.0 | Desktop only |
+| [marimo](https://marimo.io) | Required for `.py` notebooks |
+| [Jupyter](https://jupyter.org/install) (`notebook` or `lab`) | Required for `.ipynb` notebooks |
+| Python environment with the above installed | Make sure the executables are on PATH or configure their full paths in settings |
 
 Install the notebook servers with pip:
 
@@ -47,16 +48,18 @@ jupyter --version
 
 ## Installation
 
-### From the Obsidian community plugin browser _(coming soon)_
+### From the Obsidian community plugins directory (recommended)
 
-1. Open **Settings → Community plugins → Browse**.
-2. Search for **Marimo notebooks**.
-3. Click **Install**, then **Enable**.
+1. Open **Settings → Community plugins**.
+2. Disable **Restricted mode** if prompted.
+3. Click **Browse**, search for **Notebooks**, and install.
+4. Enable the plugin.
 
-### Manual install
+### Manual installation
 
-1. Download the [latest release](https://github.com/Canna71/obsidian-marimo/releases/latest) and unzip it into your vault's `.obsidian/plugins/obsidian-marimo/` folder.
-2. In Obsidian → **Settings → Community plugins**, enable **Marimo notebooks**.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/Canna71/obsidian-notebooks/releases).
+2. Copy the three files into `<vault>/.obsidian/plugins/obsidian-notebooks/`.
+3. Reload Obsidian and enable the plugin under **Settings → Community plugins**.
 
 ---
 
@@ -64,7 +67,7 @@ jupyter --version
 
 ### 1. Set executable paths
 
-If `marimo` or `jupyter` are not on the PATH that Obsidian sees (common when using pyenv, conda, or nvm), supply the full path in settings.
+If `marimo` or `jupyter` are not on the PATH that Obsidian sees (common when using pyenv, conda, or virtual environments), supply the full path in settings.
 
 Find the paths in your terminal:
 
@@ -73,28 +76,26 @@ which marimo   # e.g. /Users/you/.pyenv/shims/marimo
 which jupyter  # e.g. /Users/you/.pyenv/shims/jupyter
 ```
 
-Paste the output into **Settings → Marimo notebooks → Marimo → Executable** and **Settings → Marimo notebooks → Jupyter → Executable**.
+Paste the output into **Settings → Notebooks → Marimo → Executable** and **Settings → Notebooks → Jupyter → Executable**.
 
-### 2. (Optional) Add watched folders
+### 2. (Optional) Configure watched folders
 
-Go to **Settings → Marimo notebooks → Watched folders** and add vault-relative folder paths, one per line:
+Go to **Settings → Notebooks → Watched folders** and add vault-relative folder paths, one per line:
 
 ```
 notebooks
-research/marimo
+research/data
 ```
 
-Files inside these folders open automatically as notebook views when clicked. Files outside watched folders still open in the notebook view but show a placeholder with an **Open as notebook** button.
-
-Leave the field empty to open **all** `.py` and `.ipynb` files as notebooks automatically.
+Files inside these folders open automatically as notebook views when clicked. Leave the field empty to open **all** `.py` and `.ipynb` files as notebooks automatically.
 
 ### 3. Open a notebook
 
 | Method | How |
 |---|---|
 | Click | Click any `.py` or `.ipynb` file in the file explorer |
-| Right-click | **Open as marimo notebook** in the context menu |
-| Command palette | **Marimo notebooks: Open as marimo notebook** |
+| Right-click | **Open as notebook** in the context menu |
+| Command palette | **Notebooks: Open as notebook** |
 
 ---
 
@@ -106,74 +107,96 @@ Leave the field empty to open **all** `.py` and `.ipynb` files as notebooks auto
 |---|---|---|
 | Executable | `marimo` | Path to the marimo binary. Use the full path if marimo is not on Obsidian's PATH. |
 | Base port | `2718` | Port for the first marimo server. Additional open notebooks use consecutive ports. |
-| Extra arguments | _(empty)_ | Space-separated flags appended to every `marimo edit` invocation. `--headless` and `--no-token` are always added automatically. |
+| Extra arguments | _(empty)_ | Flags appended to every `marimo edit` invocation. `--headless` and `--no-token` are always included automatically. |
 
 ### Jupyter
 
 | Setting | Default | Description |
 |---|---|---|
 | Executable | `jupyter` | Path to the jupyter binary. Use the full path if jupyter is not on Obsidian's PATH. |
+| Interface | `notebook` | Choose `notebook` (classic) or `lab` (JupyterLab). |
 | Base port | `8888` | Port for the first Jupyter server. Additional open notebooks use consecutive ports. |
-| Interface | Classic notebook | Choose between the classic Notebook interface and JupyterLab. |
-| Extra arguments | _(empty)_ | Space-separated flags appended to every `jupyter` invocation. `--no-browser`, token disable, and XSRF disable are always added automatically. For Jupyter < 7 add `--NotebookApp.token= --NotebookApp.disable_check_xsrf=True`. |
+| Extra arguments | _(empty)_ | Flags appended to every `jupyter` invocation. `--no-browser`, token disable, and XSRF disable are always included automatically. |
 
 ### Shared
 
 | Setting | Default | Description |
 |---|---|---|
-| Extra PATH directories | _(empty)_ | Directories prepended to PATH for all notebook servers, one per line. Use this to make `node`, `python`, or other tools visible to the servers when Obsidian cannot find them. |
-| Watched folders | _(empty)_ | Vault-relative folder paths. `.py` and `.ipynb` files inside these folders open automatically as notebooks. Leave empty to open all such files automatically. |
+| Extra PATH directories | _(empty)_ | Newline-separated directories prepended to PATH for all notebook servers. Useful when Obsidian's inherited PATH is missing your Python environment (e.g. pyenv shims or a virtualenv). |
+| Watched folders | _(empty)_ | Newline-separated vault-relative folder paths. When non-empty, only `.py` and `.ipynb` files inside these folders open automatically as notebooks. Leave empty to auto-open all matching files. |
 
 ---
 
 ## Troubleshooting
 
-### Executable not found
+### "marimo not found" / "jupyter not found"
 
-Obsidian inherits a minimal system PATH that often omits user-installed tools (pyenv, conda, Homebrew, nvm). Fix: paste the full executable path into the relevant **Executable** setting (see [Getting started](#1-set-executable-paths)).
+Obsidian inherits a minimal PATH that may not include your Python environment. Fix with one of:
 
-### Node.js not found (marimo Copilot)
+- **Extra PATH directories** setting: add the directory containing the executable (e.g. `/Users/you/.pyenv/shims`).
+- **Executable** setting: enter the absolute path to the binary (e.g. `/usr/local/bin/marimo`).
 
-marimo uses Node.js for GitHub Copilot integration. Add the directory containing `node` to **Settings → Marimo notebooks → Extra PATH directories**, e.g.:
+Run `which marimo` or `which jupyter` in a terminal to find the correct path.
+
+### Notebook opens blank or shows a login page
+
+- **marimo**: the plugin passes `--no-token` automatically. If the login page appears, make sure you have not added conflicting token flags in **Extra arguments**.
+- **Jupyter**: the plugin passes `--ServerApp.token= --ServerApp.disable_check_xsrf=True` automatically. If you have old values like `--NotebookApp.token=` in **Extra arguments**, remove them — those flags are rejected by Jupyter ≥ 7.
+
+### File opens as plain text instead of a notebook view
+
+- Confirm the plugin is enabled.
+- Confirm the file extension is exactly `.py` or `.ipynb`.
+- If **Watched folders** is configured, check that the file is inside one of the listed folders.
+
+### Node.js not found (marimo Copilot integration)
+
+marimo uses Node.js for its GitHub Copilot integration. Add the directory containing `node` to **Settings → Notebooks → Extra PATH directories**, e.g.:
 
 ```
 /Users/you/.nvm/versions/node/v22.0.0/bin
 ```
 
-### Jupyter: XSRF or token errors
+### Relative imports fail inside a notebook
 
-For Jupyter < 7, add to **Jupyter → Extra arguments**:
-
-```
---NotebookApp.token= --NotebookApp.disable_check_xsrf=True
-```
+The server working directory is set to the folder containing the notebook, so imports relative to the notebook file should resolve correctly. If they fail, check that the imported files are in the same directory as the notebook.
 
 ### Notebook takes too long to start
 
-The plugin waits up to 20 seconds for the server to accept connections. If your machine is slow or the notebook is large, try reloading the tab after the server is ready. A **Retry** button appears on timeout.
+The plugin waits up to 20 seconds for the server to accept connections. A **Retry** button appears on timeout. If your machine or notebook is slow, click **Retry** once the server has had more time to start.
 
-### Relative imports fail inside a notebook
+### Orphaned processes after a crash
 
-The server working directory is set to the notebook's own folder, so `import`s relative to the notebook file should resolve correctly. If they don't, check that the files being imported are in the same folder as the notebook.
+Servers are stopped automatically when their pane is closed. If Obsidian crashes, orphaned processes may remain. Kill them with:
+
+```bash
+pkill -f "marimo edit"
+pkill -f "jupyter notebook"
+pkill -f "jupyter lab"
+```
 
 ---
 
 ## Development
 
 ```bash
-git clone https://github.com/Canna71/obsidian-marimo
-cd obsidian-marimo
+git clone https://github.com/Canna71/obsidian-notebooks
+cd obsidian-notebooks
 npm install --legacy-peer-deps
-npm run dev        # watch mode — rebuilds on every save
+npm run dev          # watch mode — rebuilds on every save
+npm run build        # production build
 ```
 
-Copy or symlink the plugin folder into your test vault's `.obsidian/plugins/` directory. After each rebuild, reload the plugin in Obsidian via **Settings → Community plugins → Marimo notebooks → Reload**, or install the [Hot-Reload plugin](https://github.com/pjeby/hot-reload) for automatic reloading.
+Symlink or copy the plugin folder into your test vault's `.obsidian/plugins/` directory. Install the [Hot-Reload plugin](https://github.com/pjeby/hot-reload) for automatic plugin reloading during development.
 
-To produce a release build:
+Source layout:
 
-```bash
-npm run build
-```
+| File | Purpose |
+|---|---|
+| `src/main.ts` | Plugin entry point, settings, command and event registration |
+| `src/MarimoView.ts` | `ItemView` that hosts the embedded iframe |
+| `src/ProcessManager.ts` | Spawns and tracks marimo / Jupyter server processes |
+| `src/MarimoSettingTab.ts` | Settings UI |
 
 ---
 

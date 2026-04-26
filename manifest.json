@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-marimo",
-	"name": "Marimo notebooks",
+	"id": "obsidian-notebooks",
+	"name": "Notebooks",
 	"version": "0.1.0",
 	"minAppVersion": "1.0.0",
-	"description": "Open Python files as interactive marimo notebooks inside Obsidian.",
+	"description": "Open marimo (.py) and Jupyter (.ipynb) notebooks as interactive embedded views inside Obsidian.",
 	"author": "Gabriele Cannata",
 	"authorUrl": "https://github.com/Canna71",
 	"isDesktopOnly": true

@@ -166,17 +166,17 @@ export class MarimoView extends ItemView {
 		const box = contentEl.createDiv({ cls: "marimo-not-watched" });
 		box.createEl("p", {
 			cls: "marimo-not-watched-title",
-			text: "Not a watched marimo notebook",
+			text: "Not a watched notebook",
 		});
 		box.createEl("p", {
 			text: `"${this.filePath}" is not inside any watched folder.`,
 		});
 		box.createEl("p", {
-			text: "Add its folder in Settings → Marimo notebooks → Watched folders, or open it manually:",
+			text: "Add its folder in Settings → Notebooks → Watched folders, or open it manually:",
 		});
 		const btn = box.createEl("button", {
 			cls: "mod-cta",
-			text: "Open as marimo notebook",
+			text: "Open as notebook",
 		});
 		btn.addEventListener("click", () => this.renderContent());
 	}
