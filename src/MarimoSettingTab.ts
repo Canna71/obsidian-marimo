@@ -1,6 +1,43 @@
 import { App, normalizePath, PluginSettingTab, Setting } from "obsidian";
 import type MarimoPlugin from "./main";
 
+const isWindows = process.platform === "win32";
+
+const MARIMO_EXEC_DESC = isWindows
+	? 'The marimo binary. Use "marimo" if it is on your PATH, or paste the full path ' +
+	  '(e.g. C:\\Users\\you\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\marimo.exe). ' +
+	  'You can also use "python -m marimo" if python is on your PATH. ' +
+	  'Run "where marimo" in a Command Prompt to find it.'
+	: 'The marimo binary. Use "marimo" if it is on your PATH, or paste the full path ' +
+	  '(e.g. /Users/you/.pyenv/shims/marimo). ' +
+	  'You can also use "python -m marimo" if python is on your PATH. ' +
+	  'Run "which marimo" in your terminal to find it.';
+
+const JUPYTER_EXEC_DESC = isWindows
+	? 'The jupyter binary. Use "jupyter" if it is on your PATH, or paste the full path ' +
+	  '(e.g. C:\\Users\\you\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\jupyter.exe). ' +
+	  'You can also use "python -m jupyter" if python is on your PATH. ' +
+	  'Run "where jupyter" in a Command Prompt to find it.'
+	: 'The jupyter binary. Use "jupyter" if it is on your PATH, or paste the full path ' +
+	  '(e.g. /Users/you/.pyenv/shims/jupyter). ' +
+	  'You can also use "python -m jupyter" if python is on your PATH. ' +
+	  'Run "which jupyter" in your terminal to find it.';
+
+const EXTRA_PATH_DESC = isWindows
+	? "Directories prepended to PATH for all notebook servers (one per line). " +
+	  "Add directories containing python, marimo, jupyter, or other tools " +
+	  "that cannot be found when launching from Obsidian. " +
+	  'Run "echo %PATH%" in a Command Prompt to see candidates. ' +
+	  "Example: C:\\Users\\you\\AppData\\Local\\Programs\\Python\\Python312\\Scripts"
+	: "Directories prepended to PATH for all notebook servers (one per line). " +
+	  "Add directories containing python, marimo, jupyter, or other tools " +
+	  "that cannot be found when launching from Obsidian. " +
+	  'Run "echo $PATH" in your terminal to see candidates.';
+
+const EXTRA_PATH_PLACEHOLDER = isWindows
+	? "C:\\Users\\you\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\nC:\\Users\\you\\.nvm\\versions\\node\\v22.0.0"
+	: "/Users/you/.pyenv/shims\n/opt/homebrew/bin";
+
 export class MarimoSettingTab extends PluginSettingTab {
 	private plugin: MarimoPlugin;
 
@@ -18,10 +55,7 @@ export class MarimoSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Executable")
-			.setDesc(
-				'The marimo binary. Use "marimo" if it is on your PATH, or paste ' +
-				"the full path. Run `which marimo` in your terminal to find it."
-			)
+			.setDesc(MARIMO_EXEC_DESC)
 			.addText((text) =>
 				text
 					.setPlaceholder("marimo")
@@ -69,10 +103,7 @@ export class MarimoSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Executable")
-			.setDesc(
-				'The jupyter binary. Use "jupyter" if it is on your PATH, or paste ' +
-				"the full path. Run `which jupyter` in your terminal to find it."
-			)
+			.setDesc(JUPYTER_EXEC_DESC)
 			.addText((text) =>
 				text
 					.setPlaceholder("jupyter")
@@ -134,17 +165,10 @@ export class MarimoSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Extra PATH directories")
-			.setDesc(
-				"Directories prepended to PATH for all notebook servers (one per line). " +
-				"Add directories containing node, python, jupyter, or other tools " +
-				"that cannot be found when launching from Obsidian. " +
-				'Run "echo $PATH" in your terminal to see candidates.'
-			)
+			.setDesc(EXTRA_PATH_DESC)
 			.addTextArea((text) => {
 				text
-					.setPlaceholder(
-						"/Users/you/.nvm/versions/node/v22.0.0/bin\n/opt/homebrew/bin"
-					)
+					.setPlaceholder(EXTRA_PATH_PLACEHOLDER)
 					.setValue(this.plugin.settings.extraPath)
 					.onChange(async (value) => {
 						this.plugin.settings.extraPath = value;

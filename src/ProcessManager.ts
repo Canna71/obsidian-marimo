@@ -23,7 +23,9 @@ export class ProcessManager {
 		}
 
 		const port = this.nextAvailablePort(basePort);
+		const [marimoCmd, ...marimoPrefix] = marimoExecutable.trim().split(/\s+/);
 		const args = [
+			...marimoPrefix,
 			"edit",
 			absolutePath,
 			"--port", String(port),
@@ -34,11 +36,11 @@ export class ProcessManager {
 
 		const cwd = dirname(absolutePath);
 		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
-		console.log("[marimo] spawning:", marimoExecutable, args.join(" "));
+		console.log("[marimo] spawning:", marimoCmd, args.join(" "));
 		console.log("[marimo] cwd:", cwd);
 		console.log("[marimo] PATH:", envPath);
 
-		const proc = spawn(marimoExecutable, args, {
+		const proc = spawn(marimoCmd, args, {
 			cwd,
 			detached: false,
 			stdio: ["ignore", "pipe", "pipe"],
@@ -56,8 +58,8 @@ export class ProcessManager {
 			this.processes.delete(absolutePath);
 			if (err.code === "ENOENT") {
 				new Notice(
-					`Marimo executable not found: "${marimoExecutable}"\n` +
-					`Set the full path in Settings → Marimo notebooks.`
+					`Marimo executable not found: "${marimoCmd}"\n` +
+					`Set the full path in Settings → Notebooks.`
 				);
 			} else {
 				new Notice(`Marimo process error: ${err.message}`);
@@ -111,15 +113,13 @@ export class ProcessManager {
 
 		const port = this.nextAvailablePort(basePort);
 		const file = basename(absolutePath);
+		const [jupyterCmd, ...jupyterPrefix] = jupyterExecutable.trim().split(/\s+/);
 		const args = [
+			...jupyterPrefix,
 			mode,           // "notebook" or "lab"
 			file,
 			"--no-browser",
 			"--port", String(port),
-			// Disable token auth and XSRF checks so the embedded iframe works.
-			// These are the Jupyter ≥ 7 / JupyterLab keys (ServerApp).
-			// For older Jupyter add --NotebookApp.token= --NotebookApp.disable_check_xsrf=True
-			// in the extra arguments setting.
 			"--ServerApp.token=",
 			"--ServerApp.disable_check_xsrf=True",
 			...extraArgs,
@@ -127,11 +127,11 @@ export class ProcessManager {
 
 		const cwd = dirname(absolutePath);
 		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
-		console.log("[jupyter] spawning:", jupyterExecutable, args.join(" "));
+		console.log("[jupyter] spawning:", jupyterCmd, args.join(" "));
 		console.log("[jupyter] cwd:", cwd);
 		console.log("[jupyter] PATH:", envPath);
 
-		const proc = spawn(jupyterExecutable, args, {
+		const proc = spawn(jupyterCmd, args, {
 			cwd,
 			detached: false,
 			stdio: ["ignore", "pipe", "pipe"],
@@ -149,8 +149,8 @@ export class ProcessManager {
 			this.processes.delete(absolutePath);
 			if (err.code === "ENOENT") {
 				new Notice(
-					`Jupyter executable not found: "${jupyterExecutable}"\n` +
-					`Set the full path in Settings → Marimo notebooks.`
+					`Jupyter executable not found: "${jupyterCmd}"\n` +
+					`Set the full path in Settings → Notebooks.`
 				);
 			} else {
 				new Notice(`Jupyter process error: ${err.message}`);

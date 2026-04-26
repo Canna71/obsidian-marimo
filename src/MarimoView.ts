@@ -85,11 +85,13 @@ export class MarimoView extends ItemView {
 		const { contentEl } = this;
 		contentEl.empty();
 
+		const isJupyter = this.filePath.endsWith(".ipynb");
+
 		const loading = contentEl.createDiv({ cls: "marimo-loading" });
 		loading.createDiv({ cls: "marimo-spinner" });
 		loading.createEl("p", {
 			cls: "marimo-loading-text",
-			text: "Starting marimo…",
+			text: isJupyter ? "Starting Jupyter…" : "Starting marimo…",
 		});
 
 		let absolutePath: string;
@@ -104,8 +106,6 @@ export class MarimoView extends ItemView {
 			.split("\n")
 			.map((s) => s.trim())
 			.filter((s) => s.length > 0);
-
-		const isJupyter = this.filePath.endsWith(".ipynb");
 
 		let url: string;
 		let port: number;
@@ -142,7 +142,7 @@ export class MarimoView extends ItemView {
 
 		if (!ready) {
 			const err = contentEl.createDiv({ cls: "marimo-error" });
-			err.createEl("p", { text: "Marimo did not respond in time." });
+			err.createEl("p", { text: `${isJupyter ? "Jupyter" : "Marimo"} did not respond in time.` });
 			err.createEl("p", { text: `You can try opening it directly: ${url}` });
 			const retryBtn = err.createEl("button", {
 				cls: "mod-cta",
