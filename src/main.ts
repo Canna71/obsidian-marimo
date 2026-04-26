@@ -12,18 +12,30 @@ import { ProcessManager } from "./ProcessManager";
 
 export interface MarimoPluginSettings {
 	watchedFolders: string[];
+	// marimo
 	marimoPort: number;
 	marimoPath: string;
 	extraArgs: string;
 	extraPath: string;
+	// jupyter
+	jupyterPort: number;
+	jupyterPath: string;
+	jupyterMode: string;
+	jupyterExtraArgs: string;
 }
 
 const DEFAULT_SETTINGS: MarimoPluginSettings = {
 	watchedFolders: [],
+	// marimo
 	marimoPort: 2718,
 	marimoPath: "marimo",
 	extraArgs: "",
 	extraPath: "",
+	// jupyter
+	jupyterPort: 8888,
+	jupyterPath: "jupyter",
+	jupyterMode: "notebook",
+	jupyterExtraArgs: "",
 };
 
 export default class MarimoPlugin extends Plugin {
@@ -40,44 +52,17 @@ export default class MarimoPlugin extends Plugin {
 			(leaf) => new MarimoView(leaf, this)
 		);
 
-		// Auto-open .py files in watched folders as marimo notebooks.
-		this.registerEvent(
-			this.app.workspace.on("file-open", (file: TFile | null) => {
-				console.log("[marimo] file-open fired:", file?.path ?? "(null)");
-				if (!file || !this.isWatched(file)) {
-					console.log("[marimo] skipping — not watched");
-					return;
-				}
-
-				// Find the leaf that currently holds this file in a non-marimo view.
-				let fileLeaf: WorkspaceLeaf | null = null;
-				this.app.workspace.iterateAllLeaves((leaf) => {
-					const vs = leaf.getViewState();
-					// The default code/markdown editor stores the path in state.file
-					if (vs.state?.file === file.path && vs.type !== MARIMO_VIEW_TYPE) {
-						fileLeaf = leaf;
-					}
-				});
-
-				console.log("[marimo] fileLeaf found:", fileLeaf !== null,
-					fileLeaf ? (fileLeaf as WorkspaceLeaf).getViewState().type : "—");
-
-				if (!fileLeaf) return;
-
-				(fileLeaf as WorkspaceLeaf).setViewState({
-					type: MARIMO_VIEW_TYPE,
-					active: true,
-					state: { filePath: file.path },
-				});
-			})
-		);
+		// Register both extensions so Obsidian routes them to our view.
+		// The view itself decides whether to start a server (watched folder)
+		// or show a placeholder (not watched).
+		this.registerExtensions(["py", "ipynb"], MARIMO_VIEW_TYPE);
 
 		// Context-menu entry on any .py file.
 		this.registerEvent(
 			this.app.workspace.on(
 				"file-menu",
 				(menu: Menu, file: TAbstractFile) => {
-					if (!(file instanceof TFile) || file.extension !== "py")
+					if (!(file instanceof TFile) || (file.extension !== "py" && file.extension !== "ipynb"))
 						return;
 					menu.addItem((item) =>
 						item
@@ -110,10 +95,11 @@ export default class MarimoPlugin extends Plugin {
 
 	// ── helpers ──────────────────────────────────────────────────────────────
 
-	/** True when the file should auto-open as a marimo notebook. */
+	/** True when the file should auto-start a notebook server. */
 	isWatched(file: TFile): boolean {
-		if (file.extension !== "py") return false;
-		if (this.settings.watchedFolders.length === 0) return false;
+		if (file.extension !== "py" && file.extension !== "ipynb") return false;
+		// No folders configured → treat every .py file as a marimo notebook.
+		if (this.settings.watchedFolders.length === 0) return true;
 		const fp = normalizePath(file.path);
 		return this.settings.watchedFolders.some((folder) => {
 			const f = normalizePath(folder);
@@ -130,7 +116,7 @@ export default class MarimoPlugin extends Plugin {
 			const state = leaf.getViewState();
 			if (
 				state.type === MARIMO_VIEW_TYPE &&
-				state.state?.filePath === file.path
+				state.state?.file === file.path
 			) {
 				target = leaf;
 			}
@@ -141,12 +127,11 @@ export default class MarimoPlugin extends Plugin {
 			return;
 		}
 
-		// Open in a new tab.
 		const leaf = workspace.getLeaf("tab");
 		await leaf.setViewState({
 			type: MARIMO_VIEW_TYPE,
 			active: true,
-			state: { filePath: file.path },
+			state: { file: file.path },
 		});
 		workspace.revealLeaf(leaf);
 	}

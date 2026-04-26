@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { delimiter, dirname } from "path";
+import { basename, delimiter, dirname } from "path";
 import { Notice } from "obsidian";
 
 interface MarimoProcess {
@@ -91,6 +91,88 @@ export class ProcessManager {
 			}
 		}
 		this.processes.clear();
+	}
+
+	startJupyter(
+		absolutePath: string,
+		basePort: number,
+		jupyterExecutable: string,
+		mode: string,
+		extraArgs: string[],
+		extraPathDirs: string[]
+	): { url: string; port: number } {
+		const existing = this.processes.get(absolutePath);
+		if (existing) {
+			return {
+				url: this.jupyterUrl(mode, existing.port, basename(absolutePath)),
+				port: existing.port,
+			};
+		}
+
+		const port = this.nextAvailablePort(basePort);
+		const file = basename(absolutePath);
+		const args = [
+			mode,           // "notebook" or "lab"
+			file,
+			"--no-browser",
+			"--port", String(port),
+			// Disable token auth and XSRF checks so the embedded iframe works.
+			// These are the Jupyter ≥ 7 / JupyterLab keys (ServerApp).
+			// For older Jupyter add --NotebookApp.token= --NotebookApp.disable_check_xsrf=True
+			// in the extra arguments setting.
+			"--ServerApp.token=",
+			"--ServerApp.disable_check_xsrf=True",
+			...extraArgs,
+		];
+
+		const cwd = dirname(absolutePath);
+		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
+		console.log("[jupyter] spawning:", jupyterExecutable, args.join(" "));
+		console.log("[jupyter] cwd:", cwd);
+		console.log("[jupyter] PATH:", envPath);
+
+		const proc = spawn(jupyterExecutable, args, {
+			cwd,
+			detached: false,
+			stdio: ["ignore", "pipe", "pipe"],
+			env: { ...process.env, PATH: envPath },
+		});
+
+		proc.stdout?.on("data", (d: Buffer) =>
+			console.log("[jupyter stdout]", d.toString().trimEnd())
+		);
+		proc.stderr?.on("data", (d: Buffer) =>
+			console.log("[jupyter stderr]", d.toString().trimEnd())
+		);
+
+		proc.on("error", (err: NodeJS.ErrnoException) => {
+			this.processes.delete(absolutePath);
+			if (err.code === "ENOENT") {
+				new Notice(
+					`Jupyter executable not found: "${jupyterExecutable}"\n` +
+					`Set the full path in Settings → Marimo notebooks.`
+				);
+			} else {
+				new Notice(`Jupyter process error: ${err.message}`);
+			}
+		});
+
+		proc.on("exit", (code: number | null) => {
+			this.processes.delete(absolutePath);
+			if (code !== null && code !== 0) {
+				new Notice(`Jupyter exited unexpectedly (code ${code}).`);
+			}
+		});
+
+		this.processes.set(absolutePath, { process: proc, port });
+		return { url: this.jupyterUrl(mode, port, file), port };
+	}
+
+	private jupyterUrl(mode: string, port: number, filename: string): string {
+		const encoded = encodeURIComponent(filename);
+		return mode === "lab"
+			? `http://localhost:${port}/lab/tree/${encoded}`
+			: `http://localhost:${port}/notebooks/${encoded}`;
 	}
 
 	isRunning(absolutePath: string): boolean {

@@ -66,6 +66,30 @@
 	margin: 0;
 }
 
+/* Not-watched placeholder */
+.marimo-not-watched {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	height: 100%;
+	padding: var(--size-4-8);
+	gap: var(--size-4-2);
+	max-width: 480px;
+	margin: 0 auto;
+}
+
+.marimo-not-watched-title {
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-semibold);
+	margin: 0;
+}
+
+.marimo-not-watched p {
+	color: var(--text-muted);
+	margin: 0;
+}
+
 /* Textarea in settings */
 .marimo-folders-textarea {
 	width: 100%;

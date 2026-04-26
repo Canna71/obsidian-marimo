@@ -10,7 +10,8 @@ import type MarimoPlugin from "./main";
 export const MARIMO_VIEW_TYPE = "marimo-notebook";
 
 interface MarimoViewState {
-	filePath: string;
+	file?: string;
+	filePath?: string; // legacy key, kept for workspace restore compatibility
 }
 
 export class MarimoView extends ItemView {
@@ -27,9 +28,9 @@ export class MarimoView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		if (!this.filePath) return "Marimo notebook";
+		if (!this.filePath) return "Notebook";
 		const name = this.filePath.split("/").pop() ?? this.filePath;
-		return name.replace(/\.py$/, "");
+		return name.replace(/\.(py|ipynb)$/, "");
 	}
 
 	getIcon(): string {
@@ -37,19 +38,27 @@ export class MarimoView extends ItemView {
 	}
 
 	async setState(state: MarimoViewState, result: ViewStateResult): Promise<void> {
-		const incoming = state?.filePath ?? "";
+		// Obsidian passes `state.file` when opening via registerExtensions.
+		// Our own openMarimoView used `filePath`; keep that as a fallback so
+		// any workspace state saved with the old key still restores correctly.
+		const incoming = (state?.file ?? state?.filePath ?? "") as string;
 		if (incoming && incoming !== this.filePath) {
 			if (this.filePath) {
 				this.plugin.processManager.kill(this.absolutePath(this.filePath));
 			}
 			this.filePath = incoming;
-			await this.renderContent();
+			const tfile = this.app.vault.getFileByPath(this.filePath);
+			if (tfile && !this.plugin.isWatched(tfile)) {
+				this.renderNotWatched();
+			} else {
+				await this.renderContent();
+			}
 		}
 		await super.setState(state, result);
 	}
 
 	getState(): Record<string, unknown> {
-		return { filePath: this.filePath };
+		return { file: this.filePath };
 	}
 
 	async onOpen(): Promise<void> {
@@ -91,23 +100,40 @@ export class MarimoView extends ItemView {
 			return;
 		}
 
+		const extraPathDirs = this.plugin.settings.extraPath
+			.split("\n")
+			.map((s) => s.trim())
+			.filter((s) => s.length > 0);
+
+		const isJupyter = this.filePath.endsWith(".ipynb");
+
 		let url: string;
 		let port: number;
 		try {
-			({ url, port } = this.plugin.processManager.start(
-				absolutePath,
-				this.plugin.settings.marimoPort,
-				this.plugin.settings.marimoPath,
-				this.plugin.settings.extraArgs
-					.split(/\s+/)
-					.filter((s) => s.length > 0),
-				this.plugin.settings.extraPath
-					.split("\n")
-					.map((s) => s.trim())
-					.filter((s) => s.length > 0)
-			));
+			if (isJupyter) {
+				({ url, port } = this.plugin.processManager.startJupyter(
+					absolutePath,
+					this.plugin.settings.jupyterPort,
+					this.plugin.settings.jupyterPath,
+					this.plugin.settings.jupyterMode,
+					this.plugin.settings.jupyterExtraArgs
+						.split(/\s+/)
+						.filter((s) => s.length > 0),
+					extraPathDirs
+				));
+			} else {
+				({ url, port } = this.plugin.processManager.start(
+					absolutePath,
+					this.plugin.settings.marimoPort,
+					this.plugin.settings.marimoPath,
+					this.plugin.settings.extraArgs
+						.split(/\s+/)
+						.filter((s) => s.length > 0),
+					extraPathDirs
+				));
+			}
 		} catch (e) {
-			this.showError(`Failed to start marimo: ${(e as Error).message}`);
+			this.showError(`Failed to start notebook server: ${(e as Error).message}`);
 			return;
 		}
 
@@ -132,6 +158,27 @@ export class MarimoView extends ItemView {
 			attr: { src: url },
 		});
 		void iframe;
+	}
+
+	private renderNotWatched(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		const box = contentEl.createDiv({ cls: "marimo-not-watched" });
+		box.createEl("p", {
+			cls: "marimo-not-watched-title",
+			text: "Not a watched marimo notebook",
+		});
+		box.createEl("p", {
+			text: `"${this.filePath}" is not inside any watched folder.`,
+		});
+		box.createEl("p", {
+			text: "Add its folder in Settings → Marimo notebooks → Watched folders, or open it manually:",
+		});
+		const btn = box.createEl("button", {
+			cls: "mod-cta",
+			text: "Open as marimo notebook",
+		});
+		btn.addEventListener("click", () => this.renderContent());
 	}
 
 	private showError(message: string): void {

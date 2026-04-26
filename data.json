@@ -5,5 +5,9 @@
   "marimoPort": 2718,
   "marimoPath": "/Users/gcannata/.pyenv/shims/marimo",
   "extraArgs": "",
-  "extraPath": "/Users/gcannata/.nvm/versions/node/v24.13.0/bin"
+  "extraPath": "/Users/gcannata/.nvm/versions/node/v24.13.0/bin",
+  "jupyterPort": 8888,
+  "jupyterPath": "/Users/gcannata/.pyenv/shims/jupyter",
+  "jupyterMode": "notebook",
+  "jupyterExtraArgs": ""
 }
