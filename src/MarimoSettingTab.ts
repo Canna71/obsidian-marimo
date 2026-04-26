@@ -68,6 +68,30 @@ export class MarimoSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// ── Extra PATH directories ─────────────────────────────────────────
+		new Setting(containerEl)
+			.setName("Extra PATH directories")
+			.setDesc(
+				"Directories prepended to PATH when marimo runs (one per line). " +
+				"Add the folder that contains node, python, or other tools " +
+				"marimo needs but cannot find. " +
+				'Run "echo $PATH" in your terminal to see candidates.'
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder(
+						"/Users/you/.nvm/versions/node/v22.0.0/bin\n/opt/homebrew/bin"
+					)
+					.setValue(this.plugin.settings.extraPath)
+					.onChange(async (value) => {
+						this.plugin.settings.extraPath = value;
+						await this.plugin.saveSettings();
+					});
+				text.inputEl.rows = 4;
+				text.inputEl.addClass("marimo-folders-textarea");
+				return text;
+			});
+
 		// ── Watched folders ────────────────────────────────────────────────
 		new Setting(containerEl).setHeading().setName("Watched folders");
 

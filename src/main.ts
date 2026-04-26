@@ -15,6 +15,7 @@ export interface MarimoPluginSettings {
 	marimoPort: number;
 	marimoPath: string;
 	extraArgs: string;
+	extraPath: string;
 }
 
 const DEFAULT_SETTINGS: MarimoPluginSettings = {
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: MarimoPluginSettings = {
 	marimoPort: 2718,
 	marimoPath: "marimo",
 	extraArgs: "",
+	extraPath: "",
 };
 
 export default class MarimoPlugin extends Plugin {

@@ -76,7 +76,6 @@ export class MarimoView extends ItemView {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		// Show a loading state while the server starts.
 		const loading = contentEl.createDiv({ cls: "marimo-loading" });
 		loading.createDiv({ cls: "marimo-spinner" });
 		loading.createEl("p", {
@@ -101,6 +100,10 @@ export class MarimoView extends ItemView {
 				this.plugin.settings.marimoPath,
 				this.plugin.settings.extraArgs
 					.split(/\s+/)
+					.filter((s) => s.length > 0),
+				this.plugin.settings.extraPath
+					.split("\n")
+					.map((s) => s.trim())
 					.filter((s) => s.length > 0)
 			));
 		} catch (e) {
@@ -109,16 +112,12 @@ export class MarimoView extends ItemView {
 		}
 
 		const ready = await this.pollUntilReady(port, 20_000);
-		// Read the URL again — stdout may have supplied the token URL by now.
-		const finalUrl = this.plugin.processManager.getUrl(absolutePath) ?? url;
 		contentEl.empty();
 
 		if (!ready) {
 			const err = contentEl.createDiv({ cls: "marimo-error" });
 			err.createEl("p", { text: "Marimo did not respond in time." });
-			err.createEl("p", {
-				text: `You can try opening it directly: ${finalUrl}`,
-			});
+			err.createEl("p", { text: `You can try opening it directly: ${url}` });
 			const retryBtn = err.createEl("button", {
 				cls: "mod-cta",
 				text: "Retry",
@@ -127,15 +126,12 @@ export class MarimoView extends ItemView {
 			return;
 		}
 
-		// Use <webview> rather than <iframe> so the embedded page gets its own
-		// renderer process and cookie store. This lets marimo's auth redirect
-		// work correctly — an <iframe> shares Obsidian's app:// origin and the
-		// SameSite cookie policy blocks the session cookie from being set.
-		const webview = contentEl.createEl(
-			"webview" as keyof HTMLElementTagNameMap,
-			{ attr: { src: finalUrl } }
-		);
-		webview.addClass("marimo-webview");
+		// marimo is running with --no-token so a plain iframe works fine.
+		const iframe = contentEl.createEl("iframe", {
+			cls: "marimo-iframe",
+			attr: { src: url },
+		});
+		void iframe;
 	}
 
 	private showError(message: string): void {
@@ -169,8 +165,4 @@ export class MarimoView extends ItemView {
 			attempt();
 		});
 	}
-}
-
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -1,61 +1,53 @@
 import { ChildProcess, spawn } from "child_process";
+import { delimiter, dirname } from "path";
 import { Notice } from "obsidian";
 
 interface MarimoProcess {
 	process: ChildProcess;
 	port: number;
-	url: string; // updated from stdout once the token is known
 }
 
 export class ProcessManager {
 	private processes: Map<string, MarimoProcess> = new Map();
 
-	/**
-	 * Starts a marimo edit server for the given absolute file path.
-	 * If a server for that file is already running, returns its URL immediately.
-	 */
 	start(
 		absolutePath: string,
 		basePort: number,
 		marimoExecutable: string,
-		extraArgs: string[]
+		extraArgs: string[],
+		extraPathDirs: string[]
 	): { url: string; port: number } {
 		const existing = this.processes.get(absolutePath);
 		if (existing) {
-			return { url: existing.url, port: existing.port };
+			return { url: `http://localhost:${existing.port}`, port: existing.port };
 		}
 
 		const port = this.nextAvailablePort(basePort);
 		const args = [
 			"edit",
 			absolutePath,
-			"--port",
-			String(port),
+			"--port", String(port),
 			"--headless",
+			"--no-token",
 			...extraArgs,
 		];
 
+		const cwd = dirname(absolutePath);
+		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
 		console.log("[marimo] spawning:", marimoExecutable, args.join(" "));
+		console.log("[marimo] cwd:", cwd);
+		console.log("[marimo] PATH:", envPath);
 
 		const proc = spawn(marimoExecutable, args, {
+			cwd,
 			detached: false,
 			stdio: ["ignore", "pipe", "pipe"],
+			env: { ...process.env, PATH: envPath },
 		});
 
-		proc.stdout?.on("data", (d: Buffer) => {
-			const text = d.toString();
-			console.log("[marimo stdout]", text.trimEnd());
-			// Capture the token URL printed by marimo, e.g.:
-			// ➜  URL: http://localhost:2718?access_token=xxxx
-			const match = text.match(/URL:\s*(http:\/\/[^\s]+)/);
-			if (match) {
-				const entry = this.processes.get(absolutePath);
-				if (entry) {
-					entry.url = match[1];
-					console.log("[marimo] token URL captured:", entry.url);
-				}
-			}
-		});
+		proc.stdout?.on("data", (d: Buffer) =>
+			console.log("[marimo stdout]", d.toString().trimEnd())
+		);
 		proc.stderr?.on("data", (d: Buffer) =>
 			console.log("[marimo stderr]", d.toString().trimEnd())
 		);
@@ -79,9 +71,8 @@ export class ProcessManager {
 			}
 		});
 
-		const baseUrl = `http://localhost:${port}`;
-		this.processes.set(absolutePath, { process: proc, port, url: baseUrl });
-		return { url: baseUrl, port };
+		this.processes.set(absolutePath, { process: proc, port });
+		return { url: `http://localhost:${port}`, port };
 	}
 
 	kill(absolutePath: string): void {
@@ -100,11 +91,6 @@ export class ProcessManager {
 			}
 		}
 		this.processes.clear();
-	}
-
-	/** Returns the current URL (with token if already parsed) for a running process. */
-	getUrl(absolutePath: string): string | undefined {
-		return this.processes.get(absolutePath)?.url;
 	}
 
 	isRunning(absolutePath: string): boolean {
