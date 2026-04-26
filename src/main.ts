@@ -41,13 +41,28 @@ export default class MarimoPlugin extends Plugin {
 		// Auto-open .py files in watched folders as marimo notebooks.
 		this.registerEvent(
 			this.app.workspace.on("file-open", (file: TFile | null) => {
-				if (!file || !this.isWatched(file)) return;
-				// Replace the current leaf's view with the marimo view so we
-				// don't leave a raw-text tab behind.
-				const leaf = this.app.workspace.getMostRecentLeaf();
-				if (!leaf || leaf.getViewState().type === MARIMO_VIEW_TYPE)
+				console.log("[marimo] file-open fired:", file?.path ?? "(null)");
+				if (!file || !this.isWatched(file)) {
+					console.log("[marimo] skipping — not watched");
 					return;
-				leaf.setViewState({
+				}
+
+				// Find the leaf that currently holds this file in a non-marimo view.
+				let fileLeaf: WorkspaceLeaf | null = null;
+				this.app.workspace.iterateAllLeaves((leaf) => {
+					const vs = leaf.getViewState();
+					// The default code/markdown editor stores the path in state.file
+					if (vs.state?.file === file.path && vs.type !== MARIMO_VIEW_TYPE) {
+						fileLeaf = leaf;
+					}
+				});
+
+				console.log("[marimo] fileLeaf found:", fileLeaf !== null,
+					fileLeaf ? (fileLeaf as WorkspaceLeaf).getViewState().type : "—");
+
+				if (!fileLeaf) return;
+
+				(fileLeaf as WorkspaceLeaf).setViewState({
 					type: MARIMO_VIEW_TYPE,
 					active: true,
 					state: { filePath: file.path },

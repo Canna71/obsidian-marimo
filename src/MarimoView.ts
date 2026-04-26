@@ -1,3 +1,4 @@
+import { createConnection } from "net";
 import {
 	FileSystemAdapter,
 	ItemView,
@@ -92,21 +93,22 @@ export class MarimoView extends ItemView {
 		}
 
 		let url: string;
+		let port: number;
 		try {
-			url = this.plugin.processManager.start(
+			({ url, port } = this.plugin.processManager.start(
 				absolutePath,
 				this.plugin.settings.marimoPort,
 				this.plugin.settings.marimoPath,
 				this.plugin.settings.extraArgs
 					.split(/\s+/)
 					.filter((s) => s.length > 0)
-			);
+			));
 		} catch (e) {
 			this.showError(`Failed to start marimo: ${(e as Error).message}`);
 			return;
 		}
 
-		const ready = await this.pollUntilReady(url, 20_000);
+		const ready = await this.pollUntilReady(port, 20_000);
 		contentEl.empty();
 
 		if (!ready) {
@@ -139,20 +141,28 @@ export class MarimoView extends ItemView {
 		err.createEl("p", { text: message });
 	}
 
-	private async pollUntilReady(url: string, timeoutMs: number): Promise<boolean> {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			try {
-				const res = await fetch(url, {
-					signal: AbortSignal.timeout(2000),
+	private pollUntilReady(port: number, timeoutMs: number): Promise<boolean> {
+		return new Promise((resolve) => {
+			const deadline = Date.now() + timeoutMs;
+
+			function attempt() {
+				const socket = createConnection({ host: "127.0.0.1", port });
+				socket.on("connect", () => {
+					socket.destroy();
+					resolve(true);
 				});
-				if (res.status < 500) return true;
-			} catch {
-				// Not ready yet — keep polling.
+				socket.on("error", () => {
+					socket.destroy();
+					if (Date.now() < deadline) {
+						setTimeout(attempt, 600);
+					} else {
+						resolve(false);
+					}
+				});
 			}
-			await sleep(600);
-		}
-		return false;
+
+			attempt();
+		});
 	}
 }
 

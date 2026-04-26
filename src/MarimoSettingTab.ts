@@ -17,8 +17,9 @@ export class MarimoSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Marimo executable")
 			.setDesc(
-				'Path to the marimo binary. Use "marimo" if it is on your PATH, ' +
-					"or supply an absolute path (e.g. /usr/local/bin/marimo)."
+				'The marimo binary to run. Use "marimo" if it is on your PATH, ' +
+				"or paste the full path (e.g. /Users/you/.pyenv/shims/marimo). " +
+				"Run `which marimo` in your terminal to find the path."
 			)
 			.addText((text) =>
 				text
@@ -55,7 +56,7 @@ export class MarimoSettingTab extends PluginSettingTab {
 			.setName("Extra command-line arguments")
 			.setDesc(
 				"Space-separated flags appended to every marimo edit invocation " +
-					"(e.g. --no-token). --no-browser is always added automatically."
+					"(e.g. --no-token). --headless is always added automatically."
 			)
 			.addText((text) =>
 				text

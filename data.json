@@ -3,6 +3,6 @@
     "marimo"
   ],
   "marimoPort": 2718,
-  "marimoPath": "marimo",
+  "marimoPath": "/Users/gcannata/.pyenv/shims/marimo",
   "extraArgs": ""
 }

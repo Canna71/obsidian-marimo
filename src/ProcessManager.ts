@@ -18,33 +18,42 @@ export class ProcessManager {
 		basePort: number,
 		marimoExecutable: string,
 		extraArgs: string[]
-	): string {
+	): { url: string; port: number } {
 		const existing = this.processes.get(absolutePath);
 		if (existing) {
-			return `http://localhost:${existing.port}`;
+			return { url: `http://localhost:${existing.port}`, port: existing.port };
 		}
 
 		const port = this.nextAvailablePort(basePort);
 		const args = [
 			"edit",
+			absolutePath,
 			"--port",
 			String(port),
-			"--no-browser",
+			"--headless",
 			...extraArgs,
-			absolutePath,
 		];
+
+		console.log("[marimo] spawning:", marimoExecutable, args.join(" "));
 
 		const proc = spawn(marimoExecutable, args, {
 			detached: false,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 
+		proc.stdout?.on("data", (d: Buffer) =>
+			console.log("[marimo stdout]", d.toString().trimEnd())
+		);
+		proc.stderr?.on("data", (d: Buffer) =>
+			console.log("[marimo stderr]", d.toString().trimEnd())
+		);
+
 		proc.on("error", (err: NodeJS.ErrnoException) => {
 			this.processes.delete(absolutePath);
 			if (err.code === "ENOENT") {
 				new Notice(
-					`Marimo not found. Install it with: pip install marimo\n` +
-						`Or set the executable path in Marimo notebook settings.`
+					`Marimo executable not found: "${marimoExecutable}"\n` +
+					`Set the full path in Settings → Marimo notebooks.`
 				);
 			} else {
 				new Notice(`Marimo process error: ${err.message}`);
@@ -59,7 +68,7 @@ export class ProcessManager {
 		});
 
 		this.processes.set(absolutePath, { process: proc, port });
-		return `http://localhost:${port}`;
+		return { url: `http://localhost:${port}`, port };
 	}
 
 	kill(absolutePath: string): void {
