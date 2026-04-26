@@ -4,6 +4,7 @@ import { Notice } from "obsidian";
 interface MarimoProcess {
 	process: ChildProcess;
 	port: number;
+	url: string; // updated from stdout once the token is known
 }
 
 export class ProcessManager {
@@ -21,7 +22,7 @@ export class ProcessManager {
 	): { url: string; port: number } {
 		const existing = this.processes.get(absolutePath);
 		if (existing) {
-			return { url: `http://localhost:${existing.port}`, port: existing.port };
+			return { url: existing.url, port: existing.port };
 		}
 
 		const port = this.nextAvailablePort(basePort);
@@ -41,9 +42,20 @@ export class ProcessManager {
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 
-		proc.stdout?.on("data", (d: Buffer) =>
-			console.log("[marimo stdout]", d.toString().trimEnd())
-		);
+		proc.stdout?.on("data", (d: Buffer) => {
+			const text = d.toString();
+			console.log("[marimo stdout]", text.trimEnd());
+			// Capture the token URL printed by marimo, e.g.:
+			// ➜  URL: http://localhost:2718?access_token=xxxx
+			const match = text.match(/URL:\s*(http:\/\/[^\s]+)/);
+			if (match) {
+				const entry = this.processes.get(absolutePath);
+				if (entry) {
+					entry.url = match[1];
+					console.log("[marimo] token URL captured:", entry.url);
+				}
+			}
+		});
 		proc.stderr?.on("data", (d: Buffer) =>
 			console.log("[marimo stderr]", d.toString().trimEnd())
 		);
@@ -67,8 +79,9 @@ export class ProcessManager {
 			}
 		});
 
-		this.processes.set(absolutePath, { process: proc, port });
-		return { url: `http://localhost:${port}`, port };
+		const baseUrl = `http://localhost:${port}`;
+		this.processes.set(absolutePath, { process: proc, port, url: baseUrl });
+		return { url: baseUrl, port };
 	}
 
 	kill(absolutePath: string): void {
@@ -87,6 +100,11 @@ export class ProcessManager {
 			}
 		}
 		this.processes.clear();
+	}
+
+	/** Returns the current URL (with token if already parsed) for a running process. */
+	getUrl(absolutePath: string): string | undefined {
+		return this.processes.get(absolutePath)?.url;
 	}
 
 	isRunning(absolutePath: string): boolean {

@@ -1,8 +1,8 @@
 /* Marimo notebooks plugin styles */
 
-/* The iframe fills the entire view pane */
-.marimo-iframe {
-	display: block;
+/* The webview fills the entire view pane */
+.marimo-webview {
+	display: flex;
 	width: 100%;
 	height: 100%;
 	border: none;

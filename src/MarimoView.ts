@@ -109,13 +109,15 @@ export class MarimoView extends ItemView {
 		}
 
 		const ready = await this.pollUntilReady(port, 20_000);
+		// Read the URL again — stdout may have supplied the token URL by now.
+		const finalUrl = this.plugin.processManager.getUrl(absolutePath) ?? url;
 		contentEl.empty();
 
 		if (!ready) {
 			const err = contentEl.createDiv({ cls: "marimo-error" });
 			err.createEl("p", { text: "Marimo did not respond in time." });
 			err.createEl("p", {
-				text: `You can try opening it directly: ${url}`,
+				text: `You can try opening it directly: ${finalUrl}`,
 			});
 			const retryBtn = err.createEl("button", {
 				cls: "mod-cta",
@@ -125,12 +127,15 @@ export class MarimoView extends ItemView {
 			return;
 		}
 
-		const iframe = contentEl.createEl("iframe", {
-			cls: "marimo-iframe",
-			attr: { src: url },
-		});
-		// Keep TS happy — the element is inserted by createEl.
-		void iframe;
+		// Use <webview> rather than <iframe> so the embedded page gets its own
+		// renderer process and cookie store. This lets marimo's auth redirect
+		// work correctly — an <iframe> shares Obsidian's app:// origin and the
+		// SameSite cookie policy blocks the session cookie from being set.
+		const webview = contentEl.createEl(
+			"webview" as keyof HTMLElementTagNameMap,
+			{ attr: { src: finalUrl } }
+		);
+		webview.addClass("marimo-webview");
 	}
 
 	private showError(message: string): void {
