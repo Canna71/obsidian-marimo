@@ -41,7 +41,7 @@ export class MarimoView extends ItemView {
 		// Obsidian passes `state.file` when opening via registerExtensions.
 		// Our own openMarimoView used `filePath`; keep that as a fallback so
 		// any workspace state saved with the old key still restores correctly.
-		const incoming = (state?.file ?? state?.filePath ?? "") as string;
+		const incoming = state?.file ?? state?.filePath ?? "";
 		if (incoming && incoming !== this.filePath) {
 			if (this.filePath) {
 				this.plugin.processManager.kill(this.absolutePath(this.filePath));
@@ -65,10 +65,11 @@ export class MarimoView extends ItemView {
 		// Content is populated via setState when the view is first attached.
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): Promise<void> {
 		if (this.filePath) {
 			this.plugin.processManager.kill(this.absolutePath(this.filePath));
 		}
+		return Promise.resolve();
 	}
 
 	// ── private ──────────────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ export class MarimoView extends ItemView {
 				cls: "mod-cta",
 				text: "Retry",
 			});
-			retryBtn.addEventListener("click", () => this.renderContent());
+			retryBtn.addEventListener("click", () => void this.renderContent());
 			return;
 		}
 
@@ -178,7 +179,7 @@ export class MarimoView extends ItemView {
 			cls: "mod-cta",
 			text: "Open as notebook",
 		});
-		btn.addEventListener("click", () => this.renderContent());
+		btn.addEventListener("click", () => void this.renderContent());
 	}
 
 	private showError(message: string): void {

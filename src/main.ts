@@ -81,7 +81,7 @@ export default class MarimoPlugin extends Plugin {
 			checkCallback: (checking: boolean) => {
 				const file = this.app.workspace.getActiveFile();
 				if (file?.extension !== "py") return false;
-				if (!checking) this.openMarimoView(file);
+				if (!checking) void this.openMarimoView(file);
 				return true;
 			},
 		});
@@ -123,7 +123,7 @@ export default class MarimoPlugin extends Plugin {
 		});
 
 		if (target) {
-			workspace.revealLeaf(target);
+			void workspace.revealLeaf(target);
 			return;
 		}
 
@@ -133,7 +133,7 @@ export default class MarimoPlugin extends Plugin {
 			active: true,
 			state: { file: file.path },
 		});
-		workspace.revealLeaf(leaf);
+		void workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings() {

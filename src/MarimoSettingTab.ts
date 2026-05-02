@@ -132,7 +132,7 @@ export class MarimoSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Interface")
-			.setDesc("Classic Notebook interface or JupyterLab.")
+			.setDesc("Classic notebook interface or JupyterLab.")
 			.addDropdown((drop) =>
 				drop
 					.addOption("notebook", "Classic notebook")

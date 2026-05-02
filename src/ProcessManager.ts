@@ -36,9 +36,9 @@ export class ProcessManager {
 
 		const cwd = dirname(absolutePath);
 		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
-		console.log("[marimo] spawning:", marimoCmd, args.join(" "));
-		console.log("[marimo] cwd:", cwd);
-		console.log("[marimo] PATH:", envPath);
+		console.debug("[marimo] spawning:", marimoCmd, args.join(" "));
+		console.debug("[marimo] cwd:", cwd);
+		console.debug("[marimo] PATH:", envPath);
 
 		const proc = spawn(marimoCmd, args, {
 			cwd,
@@ -48,10 +48,10 @@ export class ProcessManager {
 		});
 
 		proc.stdout?.on("data", (d: Buffer) =>
-			console.log("[marimo stdout]", d.toString().trimEnd())
+			console.debug("[marimo stdout]", d.toString().trimEnd())
 		);
 		proc.stderr?.on("data", (d: Buffer) =>
-			console.log("[marimo stderr]", d.toString().trimEnd())
+			console.debug("[marimo stderr]", d.toString().trimEnd())
 		);
 
 		proc.on("error", (err: NodeJS.ErrnoException) => {
@@ -127,9 +127,9 @@ export class ProcessManager {
 
 		const cwd = dirname(absolutePath);
 		const envPath = [...extraPathDirs, process.env.PATH ?? ""].join(delimiter);
-		console.log("[jupyter] spawning:", jupyterCmd, args.join(" "));
-		console.log("[jupyter] cwd:", cwd);
-		console.log("[jupyter] PATH:", envPath);
+		console.debug("[jupyter] spawning:", jupyterCmd, args.join(" "));
+		console.debug("[jupyter] cwd:", cwd);
+		console.debug("[jupyter] PATH:", envPath);
 
 		const proc = spawn(jupyterCmd, args, {
 			cwd,
@@ -139,10 +139,10 @@ export class ProcessManager {
 		});
 
 		proc.stdout?.on("data", (d: Buffer) =>
-			console.log("[jupyter stdout]", d.toString().trimEnd())
+			console.debug("[jupyter stdout]", d.toString().trimEnd())
 		);
 		proc.stderr?.on("data", (d: Buffer) =>
-			console.log("[jupyter stderr]", d.toString().trimEnd())
+			console.debug("[jupyter stderr]", d.toString().trimEnd())
 		);
 
 		proc.on("error", (err: NodeJS.ErrnoException) => {
